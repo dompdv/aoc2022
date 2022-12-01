@@ -9,7 +9,6 @@ defmodule AdventOfCode.Day01 do
     |> map(&sum(&1))
   end
 
-  @spec part1(binary) :: [binary]
   def part1(args) do
     args |> parse() |> max()
   end
