@@ -1,14 +1,20 @@
 defmodule AdventOfCode.Day01 do
+  import Enum
+
   def parse(args) do
-    args |> String.split("\n", trim: true)
+    args
+    |> String.split("\n\n", trim: true)
+    |> map(&String.split(&1, "\n", trim: true))
+    |> map(fn l -> map(l, &String.to_integer/1) end)
+    |> map(&sum(&1))
   end
 
   @spec part1(binary) :: [binary]
   def part1(args) do
-    parse(args)
+    args |> parse() |> max()
   end
 
   def part2(args) do
-    parse(args)
+    args |> parse() |> sort(:desc) |> take(3) |> sum()
   end
 end
