@@ -4,10 +4,7 @@ defmodule AdventOfCode.Day02 do
   def parse(args) do
     args
     |> String.split("\n", trim: true)
-    |> map(fn s ->
-      [s1, s2] = String.split(s, " ", trim: true)
-      [String.to_atom(s1), String.to_atom(s2)]
-    end)
+    |> map(fn s -> String.split(s, " ", trim: true) |> map(&String.to_atom/1) end)
   end
 
   def c([:A, :X]), do: {0, :rock}
@@ -24,13 +21,9 @@ defmodule AdventOfCode.Day02 do
   def v(:paper), do: 2
   def v(:scissors), do: 3
 
-  def score({winner, what}) do
-    case winner do
-      0 -> 3
-      1 -> 0
-      2 -> 6
-    end + v(what)
-  end
+  def score({0, what}), do: 3 + v(what)
+  def score({1, what}), do: v(what)
+  def score({2, what}), do: 6 + v(what)
 
   def part1(args) do
     args

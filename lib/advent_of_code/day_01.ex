@@ -4,8 +4,7 @@ defmodule AdventOfCode.Day01 do
   def parse(args) do
     args
     |> String.split("\n\n", trim: true)
-    |> map(&String.split(&1, "\n", trim: true))
-    |> map(fn l -> map(l, &String.to_integer/1) end)
+    |> map(fn l -> map(String.split(l, "\n", trim: true), &String.to_integer/1) end)
     |> map(&sum(&1))
   end
 
