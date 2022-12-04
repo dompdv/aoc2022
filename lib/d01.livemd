@@ -1,0 +1,28 @@
+# Day01
+
+```elixir
+args = File.read!("#{__DIR__}/../data/d1.txt")
+```
+
+## Section
+
+```elixir
+defmodule AoC do
+  import Enum
+
+  def parse(args) do
+    args
+    |> String.split("\n\n", trim: true)
+    |> map(fn l -> map(String.split(l, "\n", trim: true), &String.to_integer/1) end)
+    |> map(&sum(&1))
+  end
+end
+```
+
+```elixir
+args |> AoC.parse() |> Enum.max()
+```
+
+```elixir
+args |> AoC.parse() |> Enum.sort(:desc) |> Enum.take(3) |> Enum.sum()
+```

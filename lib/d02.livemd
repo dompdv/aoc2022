@@ -1,0 +1,50 @@
+# Day2
+
+```elixir
+args = File.read!("#{__DIR__}/../data/d2.txt")
+```
+
+## Common functions
+
+```elixir
+defmodule AoC do
+  import Enum
+
+  def parse(args) do
+    args
+    |> String.split("\n", trim: true)
+    |> map(fn s -> String.split(s, " ", trim: true) |> map(&String.to_atom/1) end)
+  end
+
+  def v(:rock), do: 1
+  def v(:paper), do: 2
+  def v(:scissors), do: 3
+
+  def score({0, what}), do: 3 + v(what)
+  def score({1, what}), do: v(what)
+  def score({2, what}), do: 6 + v(what)
+end
+```
+
+## Part2
+
+```elixir
+defmodule AoC do
+  def c([:A, :X]), do: {0, :rock}
+  def c([:A, :Y]), do: {2, :paper}
+  def c([:A, :Z]), do: {1, :scissors}
+  def c([:B, :X]), do: {1, :rock}
+  def c([:B, :Y]), do: {0, :paper}
+  def c([:B, :Z]), do: {2, :scissors}
+  def c([:C, :X]), do: {2, :rock}
+  def c([:C, :Y]), do: {1, :paper}
+  def c([:C, :Z]), do: {0, :scissors}
+end
+```
+
+```elixir
+args
+|> AoC.parse()
+|> Enum.map(fn match -> match |> AoC.c() |> AoC.score() end)
+|> Enum.sum()
+```
