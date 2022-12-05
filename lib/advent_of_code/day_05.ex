@@ -15,14 +15,13 @@ defmodule AdventOfCode.Day05 do
     if s * 4 >= length(line), do: nil, else: at(line, s * 4 + 1)
   end
 
-  def parse_cranes([numbers | r]) do
+  def parse_cranes(depart) do
+    [numbers | r] = String.split(depart, "\n", trim: true) |> reverse()
     slots = numbers |> String.split(" ", trim: true) |> map(&String.to_integer/1) |> max()
     size = length(r)
 
     for s <- 0..(slots - 1) do
-      for n <- 0..(size - 1) do
-        get_crate(r, n, s)
-      end
+      for(n <- 0..(size - 1), do: get_crate(r, n, s))
       |> filter(fn e -> e != nil and e != 32 end)
       |> reverse()
     end
@@ -30,39 +29,32 @@ defmodule AdventOfCode.Day05 do
 
   def parse(args) do
     [depart, instructions] = String.split(args, "\n\n", trim: true)
-
-    {
-      parse_cranes(String.split(depart, "\n", trim: true) |> reverse()),
-      parse_instructions(instructions)
-    }
+    {parse_cranes(depart), parse_instructions(instructions)}
   end
 
-  def move(slots, from, to) do
+  def move_1(slots, from, to) do
     [t | r] = at(slots, from - 1)
     d = at(slots, to - 1)
     slots |> List.replace_at(from - 1, r) |> List.replace_at(to - 1, [t | d])
   end
 
-  def part1(args) do
-    {slots, ins} = args |> parse()
-
-    arrange =
-      reduce(ins, slots, fn [n, from, to], s ->
-        reduce(1..n, s, fn _, s_local -> move(s_local, from, to) end)
-      end)
-
-    for [t | _] <- arrange, do: t
+  def move(slots, n, from, to) do
+    reduce(1..n, slots, fn _, s_local -> move_1(s_local, from, to) end)
   end
 
-  def move(slots, n, from, to) do
-    {t, r} = at(slots, from - 1) |> split(n)
+  def move_block(slots, n, from, to) do
+    {t, r} = split(at(slots, from - 1), n)
     d = at(slots, to - 1)
     slots |> List.replace_at(from - 1, r) |> List.replace_at(to - 1, t ++ d)
   end
 
+  def part1(args) do
+    {slots, ins} = args |> parse()
+    reduce(ins, slots, fn [n, from, to], s -> move(s, n, from, to) end) |> map(&hd/1)
+  end
+
   def part2(args) do
     {slots, ins} = args |> parse()
-    arrange = reduce(ins, slots, fn [n, from, to], s -> move(s, n, from, to) end)
-    for [t | _] <- arrange, do: t
+    reduce(ins, slots, fn [n, from, to], s -> move_block(s, n, from, to) end) |> map(&hd/1)
   end
 end
