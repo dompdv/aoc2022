@@ -34,18 +34,15 @@ defmodule AdventOfCode.Day05 do
 
   def move_1(slots, from, to) do
     [t | r] = at(slots, from - 1)
-    d = at(slots, to - 1)
-    slots |> List.replace_at(from - 1, r) |> List.replace_at(to - 1, [t | d])
+    slots |> List.replace_at(from - 1, r) |> List.replace_at(to - 1, [t | at(slots, to - 1)])
   end
 
-  def move(slots, n, from, to) do
-    reduce(1..n, slots, fn _, s_local -> move_1(s_local, from, to) end)
-  end
+  def move(slots, n, from, to),
+    do: reduce(1..n, slots, fn _, s_local -> move_1(s_local, from, to) end)
 
   def move_block(slots, n, from, to) do
     {t, r} = split(at(slots, from - 1), n)
-    d = at(slots, to - 1)
-    slots |> List.replace_at(from - 1, r) |> List.replace_at(to - 1, t ++ d)
+    slots |> List.replace_at(from - 1, r) |> List.replace_at(to - 1, t ++ at(slots, to - 1))
   end
 
   def part1(args) do

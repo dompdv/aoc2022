@@ -5,14 +5,10 @@ defmodule AdventOfCode.Day01 do
     args
     |> String.split("\n\n", trim: true)
     |> map(fn l -> map(String.split(l, "\n", trim: true), &String.to_integer/1) end)
-    |> map(&sum(&1))
+    |> map(&sum/1)
   end
 
-  def part1(args) do
-    args |> parse() |> max()
-  end
+  def part1(args), do: args |> parse() |> max()
 
-  def part2(args) do
-    args |> parse() |> sort(:desc) |> take(3) |> sum()
-  end
+  def part2(args), do: args |> parse() |> sort(:desc) |> take(3) |> sum()
 end
