@@ -1,23 +1,6 @@
 defmodule AdventOfCode.Day07 do
   import Enum
 
-  def parse(args) do
-    args
-    |> String.split("\n", trim: true)
-    |> map(&tokenize/1)
-  end
-
-  def tokenize("$ cd /"), do: {:cd, :root}
-  def tokenize("$ cd .."), do: {:cd, :up}
-  def tokenize("$ cd " <> r), do: {:cd, r}
-  def tokenize("$ ls"), do: {:ls}
-  def tokenize("dir " <> r), do: {:dir, r}
-
-  def tokenize(l) do
-    [size, f] = String.split(l, " ")
-    {:file, f, String.to_integer(size)}
-  end
-
   def add_dir(fs, [], d), do: if(not Map.has_key?(fs, d), do: Map.put(fs, d, %{}), else: fs)
 
   def add_dir(fs, [a | r], d), do: Map.put(fs, a, add_dir(fs[a], r, d))
@@ -27,16 +10,18 @@ defmodule AdventOfCode.Day07 do
   def add_file(fs, [a | r], f, s), do: Map.put(fs, a, add_file(fs[a], r, f, s))
 
   def build_fs([], _, fs), do: fs
-  def build_fs([{:cd, :root} | r], _, fs), do: build_fs(r, ["/"], fs)
-  def build_fs([{:cd, :up} | r], [_ | current], fs), do: build_fs(r, current, fs)
-  def build_fs([{:cd, d} | r], current, fs), do: build_fs(r, [d | current], fs)
-  def build_fs([{:ls} | r], current, fs), do: build_fs(r, current, fs)
+  def build_fs(["$ cd /" | r], _, fs), do: build_fs(r, ["/"], fs)
+  def build_fs(["$ cd .." | r], [_ | current], fs), do: build_fs(r, current, fs)
+  def build_fs(["$ cd " <> d | r], current, fs), do: build_fs(r, [d | current], fs)
+  def build_fs(["$ ls" | r], current, fs), do: build_fs(r, current, fs)
 
-  def build_fs([{:dir, d} | r], current, fs),
+  def build_fs(["dir " <> d | r], current, fs),
     do: build_fs(r, current, add_dir(fs, reverse(current), d))
 
-  def build_fs([{:file, f, s} | r], current, fs),
-    do: build_fs(r, current, add_file(fs, reverse(current), f, s))
+  def build_fs([l | r], current, fs) do
+    [size, f] = String.split(l, " ")
+    build_fs(r, current, add_file(fs, reverse(current), f, String.to_integer(size)))
+  end
 
   def file_size(fs) do
     for {_c, sub_fs} <- fs do
@@ -56,23 +41,27 @@ defmodule AdventOfCode.Day07 do
   end
 
   def part1(args),
-    do: args |> parse() |> build_fs(nil, %{"/" => %{}}) |> find_small_directories(0)
+    do:
+      args
+      |> String.split("\n", trim: true)
+      |> build_fs(nil, %{"/" => %{}})
+      |> find_small_directories(0)
 
-  def find_large_enoug_directories(fs, acc, required) do
+  def find_large_enough_directories(fs, acc, required) do
     dir_size = file_size(fs)
     acc = if dir_size >= required and dir_size < acc, do: dir_size, else: acc
 
     reduce(fs, acc, fn {d, content}, local_acc ->
       if is_integer(content),
         do: local_acc,
-        else: find_large_enoug_directories(fs[d], local_acc, required)
+        else: find_large_enough_directories(fs[d], local_acc, required)
     end)
   end
 
   def part2(args) do
-    fs = args |> parse() |> build_fs(nil, %{"/" => %{}})
+    fs = args |> String.split("\n", trim: true) |> build_fs(nil, %{"/" => %{}})
     root_size = file_size(fs)
     required = 30_000_000 - (70_000_000 - root_size)
-    find_large_enoug_directories(fs, root_size, required)
+    find_large_enough_directories(fs, root_size, required)
   end
 end
