@@ -51,18 +51,5 @@ defmodule AdventOfCode.Day09 do
 
   def part1(args), do: args |> parse() |> move_all_n(1) |> uniq() |> count()
 
-  def part2(args) do
-    args = """
-    R 5
-    U 8
-    L 8
-    D 3
-    R 17
-    D 10
-    L 25
-    U 20
-    """
-
-    args |> parse() |> move_all_n(10) |> map(&List.last/1)
-  end
+  def part2(args), do: args |> parse() |> move_all_n(9) |> map(&List.last/1) |> uniq() |> count()
 end
