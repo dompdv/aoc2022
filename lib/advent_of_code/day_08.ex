@@ -44,10 +44,10 @@ defmodule AdventOfCode.Day08 do
 
   def distance(l, h) do
     reduce(l, {false, 0}, fn tree_h, {blocked, n} ->
-      if blocked do
-        {blocked, n}
-      else
-        if tree_h >= h, do: {true, n + 1}, else: {false, n + 1}
+      cond do
+        blocked -> {blocked, n}
+        tree_h >= h -> {true, n + 1}
+        true -> {false, n + 1}
       end
     end)
     |> elem(1)
