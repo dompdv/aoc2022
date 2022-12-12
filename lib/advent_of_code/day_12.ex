@@ -19,37 +19,45 @@ defmodule AdventOfCode.Day12 do
 
   @adj [{1, 0}, {-1, 0}, {0, 1}, {0, -1}]
   def adjacent({r, c} = current, grid) do
-    current_elevation = grid[current]
-
     for {dr, dc} <- @adj,
         grid[{r + dr, c + dc}] != nil,
-        grid[{r + dr, c + dc}] + 1 >= current_elevation,
+        grid[{r + dr, c + dc}] + 1 >= grid[current],
         do: {r + dr, c + dc}
   end
 
   def fill_dist(grid, current, dist, viewed) do
+    # Ajoute le noeud courant dans la liste des noeud déjà vus (parcourus)
+    viewed = MapSet.put(viewed, current)
+    # Distance du noeud courant
     current_dist = dist[current]
 
+    # Calcule les distances des noeuds accessibles adjacents
     dist =
       reduce(adjacent(current, grid), dist, fn cell, d ->
         dist_cell = if current_dist + 1 >= d[cell], do: d[cell], else: current_dist + 1
         Map.put(d, cell, dist_cell)
       end)
 
+    # Il y a-t-il un noeud non parcouru ?
     choice_in = for {cell, d} <- dist, not MapSet.member?(viewed, cell), do: {cell, d}
 
+    # Si non, on a terminé
     if empty?(choice_in) do
       dist
     else
+      # Prendre le noeud non parcouru de distance minimale
       {current, _} = min_by(choice_in, fn {_, c} -> c end)
-      fill_dist(grid, current, dist, MapSet.put(viewed, current))
+      # Continuer en ajoutant le nouveau noeud dans la liste des noeuds parcourus
+      fill_dist(grid, current, dist, viewed)
     end
   end
 
   def fill_dist(grid, current) do
     infinite = count(grid)
+    # Initialiser les distances à infini sauf le noeud de départ
     dist = for(cell <- Map.keys(grid), do: {cell, infinite}) |> Map.new() |> Map.put(current, 0)
-    fill_dist(grid, current, dist, MapSet.new([current]))
+    # Lancer le parcours
+    fill_dist(grid, current, dist, MapSet.new())
   end
 
   def part1(args) do
