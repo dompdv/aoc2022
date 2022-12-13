@@ -1,29 +1,7 @@
 defmodule AdventOfCode.Day13 do
   import Enum
 
-  def to_number(n),
-    do: reduce(n, {1, 0}, fn digit, {mul, acc} -> {mul * 10, acc + mul * digit} end) |> elem(1)
-
-  def tokenize(s), do: tokenize(to_charlist(s), [], [])
-  def tokenize([], _, tokens), do: reverse(tokens)
-  def tokenize([?[ | r], _, acc), do: tokenize(r, [], [:open | acc])
-  def tokenize([?] | r], [], acc), do: tokenize(r, [], [:close | acc])
-  def tokenize([?] | r], n, acc), do: tokenize(r, [], [:close, to_number(n) | acc])
-  def tokenize([?, | r], [], acc), do: tokenize(r, [], [:comma | acc])
-  def tokenize([?, | r], n, acc), do: tokenize(r, [], [:comma, to_number(n) | acc])
-  def tokenize([c | r], n, acc), do: tokenize(r, [c - ?0 | n], acc)
-
-  def parse_line(line) when is_binary(line), do: parse_line(tokenize(line)) |> elem(1)
-  def parse_line([:open | tokens]), do: parse_list(tokens, [])
-  def parse_list([:close | r], acc), do: {r, reverse(acc)}
-
-  def parse_list([:open | r], acc) do
-    {r2, acc2} = parse_list(r, [])
-    parse_list(r2, [acc2 | acc])
-  end
-
-  def parse_list([:comma | r], acc), do: parse_list(r, acc)
-  def parse_list([number | r], acc), do: parse_list(r, [number | acc])
+  def parse_line(line) when is_binary(line), do: Code.eval_string(line, []) |> elem(0)
 
   def parse_pair(args), do: args |> String.split("\n", trim: true) |> map(&parse_line/1)
 
