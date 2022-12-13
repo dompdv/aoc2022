@@ -4,25 +4,21 @@ defmodule AdventOfCode.Day13 do
   def parse_line(line) when is_binary(line), do: Code.eval_string(line, []) |> elem(0)
 
   def parse_pair(args), do: args |> String.split("\n", trim: true) |> map(&parse_line/1)
+  def cmp_pair([l, r]), do: cmp(l, r)
 
   def cmp([], []), do: :draw
   def cmp([], _), do: true
   def cmp(_, []), do: false
 
   def cmp([e1 | r1], [e2 | r2]) do
-    case cmp(e1, e2) do
-      :draw -> cmp(r1, r2)
-      true -> true
-      false -> false
-    end
+    first = cmp(e1, e2)
+    if first == :draw, do: cmp(r1, r2), else: first
   end
 
   def cmp(a, b) when is_integer(a) and is_list(b), do: cmp([a], b)
   def cmp(a, b) when is_list(a) and is_integer(b), do: cmp(a, [b])
 
   def cmp(a, b), do: if(a == b, do: :draw, else: a < b)
-
-  def cmp_pair([l, r]), do: cmp(l, r)
 
   def part1(args) do
     args
