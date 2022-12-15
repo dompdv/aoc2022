@@ -5,7 +5,10 @@ defmodule Mix.Tasks.D17.P1 do
 
   @shortdoc "Day 17 Part 1"
   def run(args) do
-    input = nil
+    module = Atom.to_charlist(__MODULE__)
+    l = length(module)
+    {d, u} = {Enum.at(module, l - 5) - ?0, Enum.at(module, l - 4) - ?0}
+    input = AdventOfCode.Input.get!(d * 10 + u, 2022)
 
     if Enum.member?(args, "-b"),
       do: Benchee.run(%{part_1: fn -> input |> part1() end}),
