@@ -11,18 +11,9 @@ defmodule AdventOfCode.Day15 do
         Regex.run(@mexpr, line, capture: :all_but_first)
         |> map(&String.to_integer/1)
 
-      {{xs, ys}, {xb, yb}, d({xs, ys}, {xb, yb})}
+      {{xs, ys}, {xb, yb}, abs(xb - xs) + abs(yb - ys)}
     end)
-    |> post_process()
   end
-
-  def post_process(args) do
-    sensors = for {s, _, r} <- args, do: {s, r}
-    beacons = for {_, b, _} <- args, do: b
-    {sensors, beacons}
-  end
-
-  def d({xs, ys}, {xb, yb}), do: abs(xb - xs) + abs(yb - ys)
 
   def merge_intervals({a, b}, {c, d}) when b < c - 1, do: [{a, b}, {c, d}]
   def merge_intervals({a, b}, {c, d}) when b >= c - 1 and b <= d, do: {a, d}
@@ -47,33 +38,27 @@ defmodule AdventOfCode.Day15 do
   def merge_intervals_list(l), do: merge_intervals_list(sort(l), [], false)
 
   def slice_sensors(sensors, y) do
-    for {{xs, ys}, r} <- sensors, abs(y - ys) <= r do
+    for {{xs, ys}, _, r} <- sensors, abs(y - ys) <= r do
       {xs - (r - abs(y - ys)), xs + (r - abs(y - ys))}
     end
     |> merge_intervals_list()
-    |> IO.inspect()
   end
 
   def part1(args) do
-    {sensors, beacons} = parse(args)
+    sensors = parse(args)
     y_ref = 2_000_000
 
     [{l, h}] = slice_sensors(sensors, y_ref)
-    inside = for {bx, by} <- beacons, by == y_ref, bx >= l or bx <= h, do: bx
+    inside = for {_, {bx, by}, _} <- sensors, by == y_ref, bx >= l or bx <= h, do: bx
     h - l + 1 - count(uniq(inside))
   end
 
   def part2(args) do
-    sensors = args |> parse() |> elem(0)
+    sensors = parse(args)
 
     {bx, by} =
       reduce_while(0..4_000_000, nil, fn y, _ ->
-        merged =
-          for {{xs, ys}, r} <- sensors, abs(y - ys) <= r do
-            {xs - (r - abs(y - ys)), xs + (r - abs(y - ys))}
-          end
-          |> merge_intervals_list()
-
+        merged = slice_sensors(sensors, y)
         if count(merged) == 1, do: {:cont, nil}, else: {:halt, {elem(hd(merged), 1) + 1, y}}
       end)
 
