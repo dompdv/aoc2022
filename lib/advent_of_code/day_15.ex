@@ -19,26 +19,10 @@ defmodule AdventOfCode.Day15 do
   def post_process(args) do
     sensors = for {s, _, r} <- args, do: {s, r}
     beacons = for {_, b, _} <- args, do: b
-    {xmin, xmax} = for({{x, _}, r} <- sensors, do: [x - r, x + r]) |> List.flatten() |> min_max()
-    {sensors, MapSet.new(beacons), xmin, xmax}
+    {sensors, beacons}
   end
 
   def d({xs, ys}, {xb, yb}), do: abs(xb - xs) + abs(yb - ys)
-
-  def part1(args) do
-    {sensors, beacons, xmin, xmax} = args |> parse()
-
-    reduce(xmin..xmax, 0, fn x, acc ->
-      p = {x, 2_000_000}
-
-      acc +
-        cond do
-          MapSet.member?(beacons, p) -> 0
-          any?(sensors, fn {s, r} -> d(s, p) <= r end) -> 1
-          true -> 0
-        end
-    end)
-  end
 
   def merge_intervals({a, b}, {c, d}) when b < c - 1, do: [{a, b}, {c, d}]
   def merge_intervals({a, b}, {c, d}) when b >= c - 1 and b <= d, do: {a, d}
@@ -61,6 +45,23 @@ defmodule AdventOfCode.Day15 do
   end
 
   def merge_intervals_list(l), do: merge_intervals_list(sort(l), [], false)
+
+  def slice_sensors(sensors, y) do
+    for {{xs, ys}, r} <- sensors, abs(y - ys) <= r do
+      {xs - (r - abs(y - ys)), xs + (r - abs(y - ys))}
+    end
+    |> merge_intervals_list()
+    |> IO.inspect()
+  end
+
+  def part1(args) do
+    {sensors, beacons} = parse(args)
+    y_ref = 2_000_000
+
+    [{l, h}] = slice_sensors(sensors, y_ref)
+    inside = for {bx, by} <- beacons, by == y_ref, bx >= l or bx <= h, do: bx
+    h - l + 1 - count(uniq(inside))
+  end
 
   def part2(args) do
     sensors = args |> parse() |> elem(0)
