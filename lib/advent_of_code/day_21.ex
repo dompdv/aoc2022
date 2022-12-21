@@ -48,27 +48,20 @@ defmodule AdventOfCode.Day21 do
 
   def create_function(mkeys), do: fn x -> Map.put(mkeys, "humn", {:num, x}) |> yell("root") end
 
-  def find_zero(f), do: find_zero(f, 0)
-
   def find_zero(f, x) do
     f_x = f.(x)
 
-    if abs(f_x) < 0.05 do
-      x
-    else
-      h = 0.1
-      next_x = x - h * f_x / (f.(x + h) - f_x)
-      find_zero(f, next_x)
-    end
+    if abs(f_x) < 0.05,
+      do: x,
+      else: find_zero(f, x - 0.1 * f_x / (f.(x + 0.1) - f_x))
   end
 
   def part2(args) do
-    f =
-      args
-      |> parse()
-      |> Map.update!("root", fn {_, l, r} -> {:equal, l, r} end)
-      |> create_function()
-
-    find_zero(f) |> round()
+    args
+    |> parse()
+    |> Map.update!("root", fn {_, l, r} -> {:equal, l, r} end)
+    |> create_function()
+    |> find_zero(0)
+    |> round()
   end
 end
