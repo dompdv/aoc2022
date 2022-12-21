@@ -50,28 +50,24 @@ defmodule AdventOfCode.Day18 do
       |> String.split("\n", trim: true)
       |> map(fn l -> map(String.split(l, ","), &String.to_integer/1) end)
 
+    {a_min, a_max} = min_max(List.flatten(cubes))
+
     all_sides =
       cubes
       |> reduce([], &add_sides/2)
       |> frequencies()
       |> filter(fn {_k, v} -> v == 1 end)
       |> map(&elem(&1, 0))
-
-    {a_min, a_max} = min_max(List.flatten(cubes)) |> IO.inspect(label: "minmax")
-    {a_min, a_max} = {a_min - 1, a_max + 1}
-    filled = fill([[a_min, a_min, a_min]], [], cubes, {a_min, a_max})
+      |> MapSet.new()
 
     filled_sides =
-      filled
+      fill([[a_min - 1, a_min - 1, a_min - 1]], [], cubes, {a_min - 1, a_max + 1})
       |> reduce([], &add_sides/2)
       |> frequencies()
       |> filter(fn {_k, v} -> v == 1 end)
       |> map(&elem(&1, 0))
+      |> MapSet.new()
 
-    MapSet.intersection(
-      MapSet.new(filled_sides),
-      MapSet.new(all_sides)
-    )
-    |> MapSet.size()
+    count(MapSet.intersection(filled_sides, all_sides))
   end
 end
