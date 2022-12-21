@@ -1,26 +1,13 @@
 defmodule AdventOfCode.Day21 do
   import Enum
 
+  @ops [{" + ", :plus}, {" - ", :minus}, {" * ", :mult}, {" / ", :div}]
   def parse_r(expr) do
-    cond do
-      String.contains?(expr, "+") ->
-        [l, r] = String.split(expr, " + ")
-        {:plus, l, r}
+    l = for {s, op} <- @ops, String.contains?(expr, s), do: {op, String.split(expr, s)}
 
-      String.contains?(expr, "-") ->
-        [l, r] = String.split(expr, " - ")
-        {:minus, l, r}
-
-      String.contains?(expr, "*") ->
-        [l, r] = String.split(expr, " * ")
-        {:mult, l, r}
-
-      String.contains?(expr, "/") ->
-        [l, r] = String.split(expr, " / ")
-        {:div, l, r}
-
-      true ->
-        {:num, String.to_integer(expr)}
+    case l do
+      [] -> {:num, String.to_integer(expr)}
+      [{op, [l, r]}] -> {op, l, r}
     end
   end
 
