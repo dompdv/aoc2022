@@ -59,7 +59,7 @@ defmodule AdventOfCode.Day22 do
             :north -> {find_down(maze, c), c}
             :east -> {r, find_left(maze, r)}
             :south -> {find_up(maze, c), c}
-            :west -> {r, find_left(maze, r)}
+            :west -> {r, find_right(maze, r)}
           end
 
         if maze[{r, c}] == 1, do: pos, else: {r, c}
@@ -72,25 +72,21 @@ defmodule AdventOfCode.Day22 do
   def move(t, {pos, dir}, _maze), do: {pos, turn(dir, t)}
 
   def part1(args) do
-    # args = File.read!("lib/advent_of_code/d22.txt")
     {maze, inst} = parse(args)
     dep = find_left(maze, 0) |> IO.inspect(label: "start")
-
-    {{r, c}, dir} =
-      reduce(inst, {{0, dep}, :east}, fn ins, p ->
-        IO.inspect({ins, p}, label: "P-move")
-        move(ins, p, maze)
-      end)
-
+    {{r, c}, dir} = reduce(inst, {{0, dep}, :east}, fn ins, p -> move(ins, p, maze) end)
     1000 * (r + 1) + 4 * (c + 1) + @signal[dir]
   end
 
   def part2(args) do
+    # args = File.read!("lib/advent_of_code/d22.txt")
     args
   end
 
+  def parse_inst(l), do: parse_inst(to_charlist(l), [], [])
+
   def to_num(l),
-    do: reduce(l, {0, 1}, fn n, {acc, mul} -> {acc + n * mul, mul * 10} end) |> elem(0)
+    do: {:fwd, reduce(l, {0, 1}, fn n, {acc, mul} -> {acc + n * mul, mul * 10} end) |> elem(0)}
 
   def parse_inst([], [], acc), do: reverse(acc)
   def parse_inst([], l, acc), do: reverse([to_num(l) | acc])
