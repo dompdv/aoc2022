@@ -34,65 +34,128 @@ defmodule AdventOfCode.Day22 do
     {parse_maze(maze), scan_inst(inst)}
   end
 
-  def find_left(maze, r), do: min(for {{^r, c}, _} <- maze, do: c)
-  def find_right(maze, r), do: max(for {{^r, c}, _} <- maze, do: c)
-  def find_up(maze, c), do: min(for {{r, ^c}, _} <- maze, do: r)
-  def find_down(maze, c), do: max(for {{r, ^c}, _} <- maze, do: r)
+  def jump_next({_r, c}, :north, maze), do: {max(for {{r, ^c}, _} <- maze, do: r), c}
+  def jump_next({r, _c}, :east, maze), do: {r, min(for {{^r, c}, _} <- maze, do: c)}
+  def jump_next({_r, c}, :south, maze), do: {min(for {{r, ^c}, _} <- maze, do: r), c}
+  def jump_next({r, _c}, :west, maze), do: {r, max(for {{^r, c}, _} <- maze, do: c)}
 
   def turn(dir, :right), do: at(@dirs, rem(find_index(@dirs, &(&1 == dir)) + 1, 4))
   def turn(dir, :left), do: at(@dirs, rem(find_index(@dirs, &(&1 == dir)) + 3, 4))
 
-  def fwd({{r, c} = pos, dir}, maze) do
+  def move({:fwd, steps}, {pos, dir}, maze, type),
+    do: reduce(1..steps, {pos, dir}, fn _, p -> fwd(p, maze, type) end)
+
+  def move(t, {pos, dir}, _maze, _type), do: {pos, turn(dir, t)}
+
+  def fwd({{r, c}, dir} = pos, maze, :simple) do
     {dr, dc} = @vect[dir]
     {r, c} = {r + dr, c + dc}
 
     case Map.get(maze, {r, c}, nil) do
       0 ->
-        {r, c}
+        {{r, c}, dir}
 
       1 ->
         pos
 
       nil ->
-        {r, c} =
-          case dir do
-            :north -> {find_down(maze, c), c}
-            :east -> {r, find_left(maze, r)}
-            :south -> {find_up(maze, c), c}
-            :west -> {r, find_right(maze, r)}
-          end
-
-        if maze[{r, c}] == 1, do: pos, else: {r, c}
+        {r, c} = jump_next({r, c}, dir, maze)
+        if maze[{r, c}] == 1, do: pos, else: {{r, c}, dir}
     end
   end
 
-  def move({:fwd, steps}, {pos, dir}, maze),
-    do: {reduce(1..steps, pos, fn _, p -> fwd({p, dir}, maze) end), dir}
+  def fwd({{r, c}, dir} = pos, maze, :dice) do
+    {dr, dc} = @vect[dir]
+    {r, c} = {r + dr, c + dc}
 
-  def move(t, {pos, dir}, _maze), do: {pos, turn(dir, t)}
+    case Map.get(maze, {r, c}, nil) do
+      0 ->
+        {{r, c}, dir}
+
+      1 ->
+        pos
+
+      nil ->
+        {{r, c}, new_dir} = find_next({r, c}, dir, maze)
+        if maze[{r, c}] == 1, do: pos, else: {{r, c}, new_dir}
+    end
+  end
+
+  def find_next({r, c}, dir, maze) do
+    {l, r} = min_max(for {{0, c}, _} <- maze, do: c) |> IO.inspect(label: "")
+    w = r - l + 1
+
+    side =
+      cond do
+        r < w -> 1
+        r < 2 * w and c < w -> 4
+        r < 2 * w and c < 2 * w -> 3
+        r < 2 * w -> 2
+        c < 3 * w -> 5
+        true -> 6
+      end
+
+    case {side, dir} do
+      {1, :north} ->
+        {{w, 3 * w - 1 - c}, :south}
+
+      {1, :east} ->
+        {{3 * w - 1 - r, 4 * w - 1}, :west}
+
+      {1, :west} ->
+        {{w, w + r}, :south}
+
+      {2, :east} ->
+        {{2 * w, 5 * w - 1 - r}, :south}
+
+      {3, :north} ->
+        {{c - w, 2 * w}, :east}
+
+      {3, :south} ->
+        {{4 * w - 1 - c, 2 * w}, :east}
+
+      {4, :north} ->
+        {{0, 3 * w - 1 - c}, :south}
+
+      {4, :south} ->
+        {{3 * w - 1, 3 * w - 1 - c}, :north}
+
+      {4, :west} ->
+        {{3 * w - 1, 5 * w - 1 - r}, :north}
+
+      {5, :south} ->
+        {{2 * w - 1, 3 * w - 1 - c}, :north}
+
+      {5, :west} ->
+        {{2 * w - 1, 4 * w - 1 - r}, :north}
+
+      {6, :north} ->
+        {{5 * w - 1 - c, 3 * w - 1}, :west}
+
+      {6, :east} ->
+        {{3 * w - 1 - r, 3 * w - 1}, :west}
+
+      {6, :south} ->
+        {{2 * w - 1, 4 * w - 1 - c}, :east}
+    end
+  end
 
   def part1(args) do
     {maze, inst} = parse(args)
-    dep = find_left(maze, 0) |> IO.inspect(label: "start")
-    {{r, c}, dir} = reduce(inst, {{0, dep}, :east}, fn ins, p -> move(ins, p, maze) end)
+    dep = jump_next({0, 0}, :west, maze)
+    {{r, c}, dir} = reduce(inst, {dep, :east}, fn ins, p -> move(ins, p, maze, :simple) end)
     1000 * (r + 1) + 4 * (c + 1) + @signal[dir]
   end
 
   def part2(args) do
-    # args = File.read!("lib/advent_of_code/d22.txt")
-    args
+    #    args = File.read!("lib/advent_of_code/d22.txt")
+    {maze, inst} = parse(args)
+    min_max(for({{_, c}, _} <- maze, do: c)) |> IO.inspect(label: "horizontal")
+    min_max(for({{r, _}, _} <- maze, do: r)) |> IO.inspect(label: "vertical")
+    raise "p"
+    dep = jump_next({0, 0}, :west, maze)
+    {{r, c}, dir} = reduce(inst, {dep, :east}, fn ins, p -> move(ins, p, maze, :dice) end)
+    IO.inspect({r, c, dir})
+    1000 * (r + 1) + 4 * (c + 1) + @signal[dir]
   end
-
-  def parse_inst(l), do: parse_inst(to_charlist(l), [], [])
-
-  def to_num(l),
-    do: {:fwd, reduce(l, {0, 1}, fn n, {acc, mul} -> {acc + n * mul, mul * 10} end) |> elem(0)}
-
-  def parse_inst([], [], acc), do: reverse(acc)
-  def parse_inst([], l, acc), do: reverse([to_num(l) | acc])
-  def parse_inst([?L | r], [], acc), do: parse_inst(r, [], [:left | acc])
-  def parse_inst([?L | r], l, acc), do: parse_inst(r, [], [:left, to_num(l) | acc])
-  def parse_inst([?R | r], [], acc), do: parse_inst(r, [], [:right | acc])
-  def parse_inst([?R | r], l, acc), do: parse_inst(r, [], [:right, to_num(l) | acc])
-  def parse_inst([n | r], l, acc), do: parse_inst(r, [n - ?0 | l], acc)
 end
