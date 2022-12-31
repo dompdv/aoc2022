@@ -160,8 +160,172 @@ defmodule AdventOfCode.Day16 do
     bfs(init_state(network), 0, reduce_network(network))
   end
 
+  def init_state2(network) do
+    total_valves = sum(for {_, {v, _}} <- network, do: v)
+
+    [
+      %{
+        posn: "AA",
+        pose: "AA",
+        score: 0,
+        timen: 0,
+        timee: 0,
+        path: ["AA"],
+        open_valves: MapSet.new(),
+        rem_valves: total_valves
+      }
+    ]
+  end
+
+  def bfs2([], max_score, _), do: max_score
+
+  def bfs2(
+        [%{timen: timen, timee: timee} | r],
+        max_score,
+        network
+      )
+      when timen >= 26 and timee >= 26 do
+    bfs2(r, max_score, network)
+  end
+
+  def bfs2(
+        [
+          %{
+            posn: current_posn,
+            pose: current_pose,
+            score: current_score,
+            timen: timen,
+            timee: timee,
+            path: path,
+            open_valves: open_valves,
+            rem_valves: rem_valves
+          }
+          | r
+        ],
+        max_score,
+        network
+      ) do
+    {current_valven, tosn} = network[current_posn]
+    {current_valvee, tose} = network[current_pose]
+
+    if current_score + rem_valves * (26 - Kernel.min(timen, timee) - 1) < max_score do
+      bfs2(r, max_score, network)
+    else
+      can_gon = for {dn, ton} <- tosn, timen + dn < 26, ton not in path, do: {dn, ton}
+      can_gon = if empty?(can_gon), do: [{1, current_posn}], else: can_gon
+      can_goe = for {de, toe} <- tose, timee + de < 26, toe not in path, do: {de, toe}
+      can_goe = if empty?(can_goe), do: [{1, current_pose}], else: can_goe
+
+      new_states =
+        for {dn, ton} <- can_gon do
+          for {de, toe} <- can_goe, toe != ton do
+            %{
+              posn: ton,
+              pose: toe,
+              score: current_score,
+              timen: timen + dn,
+              timee: timee + de,
+              path: [ton, toe | path],
+              open_valves: open_valves,
+              rem_valves: rem_valves
+            }
+          end
+        end
+        |> List.flatten()
+
+      {current_valven, current_valvee} =
+        cond do
+          current_valven != current_valvee -> {current_valven, current_valvee}
+          timen <= timee -> {current_valven, 0}
+          true -> {0, current_valvee}
+        end
+
+      open_valven =
+        if current_valven != 0 and not MapSet.member?(open_valves, current_posn) and timen < 26 do
+          {true, (26 - timen - 1) * current_valven}
+        else
+          false
+        end
+
+      open_valvee =
+        if current_valvee != 0 and not MapSet.member?(open_valves, current_pose) and timee < 26 do
+          {true, (26 - timee - 1) * current_valvee}
+        else
+          false
+        end
+
+      case {open_valven, open_valvee} do
+        {false, false} ->
+          bfs2(new_states ++ r, max_score, network)
+
+        {{true, dscoren}, false} ->
+          new_score = current_score + dscoren
+          new_max_score = Kernel.max(new_score, max_score)
+
+          new_state = %{
+            posn: current_posn,
+            pose: current_pose,
+            score: new_score,
+            timen: timen + 1,
+            timee: timee + 1,
+            path: path,
+            open_valves: open_valves |> MapSet.put(current_posn),
+            rem_valves: rem_valves - current_valven
+          }
+
+          if new_score > max_score, do: IO.inspect({new_score, new_state, count(r)})
+
+          bfs2([new_state | new_states] ++ r, new_max_score, network)
+
+        {false, {true, dscoree}} ->
+          new_score = current_score + dscoree
+          new_max_score = Kernel.max(new_score, max_score)
+
+          new_state = %{
+            posn: current_posn,
+            pose: current_pose,
+            score: new_score,
+            timen: timen + 1,
+            timee: timee + 1,
+            path: path,
+            open_valves: open_valves |> MapSet.put(current_pose),
+            rem_valves: rem_valves - current_valvee
+          }
+
+          if new_score > max_score, do: IO.inspect({new_score, new_state, count(r)})
+
+          bfs2([new_state | new_states] ++ r, new_max_score, network)
+
+        {{true, dscoren}, {true, dscoree}} ->
+          new_score = current_score + dscoren + dscoree
+          new_max_score = Kernel.max(new_score, max_score)
+
+          new_state = %{
+            posn: current_posn,
+            pose: current_pose,
+            score: new_score,
+            timen: timen + 1,
+            timee: timee + 1,
+            path: path,
+            open_valves: open_valves |> MapSet.put(current_posn) |> MapSet.put(current_pose),
+            rem_valves: rem_valves - current_valven - current_valvee
+          }
+
+          if new_score > max_score, do: IO.inspect({new_score, new_state, count(r)})
+
+          bfs2([new_state | new_states] ++ r, new_max_score, network)
+      end
+    end
+  end
+
   def part2(args) do
-    args = """
+    # args = test_args()
+    network = parse(args) |> IO.inspect()
+    bfs2(init_state2(network), 0, reduce_network(network))
+  end
+
+  def test_args,
+    do: """
     Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
     Valve BB has flow rate=13; tunnels lead to valves CC, AA
     Valve CC has flow rate=2; tunnels lead to valves DD, BB
@@ -173,5 +337,4 @@ defmodule AdventOfCode.Day16 do
     Valve II has flow rate=0; tunnels lead to valves AA, JJ
     Valve JJ has flow rate=21; tunnel leads to valve II
     """
-  end
 end
