@@ -5,6 +5,11 @@ defmodule AdventOfCode.Day24 do
   @c_to_atom %{?^ => :up, ?v => :down, ?< => :left, ?> => :right, ?# => :wall, ?. => nil}
 
   @deltas %{down: {1, 0}, right: {0, 1}, left: {0, -1}, up: {-1, 0}}
+
+  def occupied(bliz) do
+    :sets.from_list(for {p, _} <- bliz, do: p)
+  end
+
   def parse(args) do
     cells =
       args
@@ -16,7 +21,9 @@ defmodule AdventOfCode.Day24 do
       |> List.flatten()
       |> filter(&(elem(&1, 1) != nil))
 
-    {cells |> filter(&(elem(&1, 1) != :wall)), max(for {{_, c}, _} <- cells, do: c),
+    bliz = cells |> filter(&(elem(&1, 1) != :wall))
+
+    {{bliz, occupied(bliz)}, max(for {{_, c}, _} <- cells, do: c),
      max(for {{r, _}, _} <- cells, do: r)}
   end
 
@@ -33,11 +40,14 @@ defmodule AdventOfCode.Day24 do
      end, dir}
   end
 
-  def move_all_bliz(l, w, h), do: for(b <- l, do: move_bliz(b, w, h))
+  def move_all_bliz({l, _}, w, h) do
+    bliz = for(b <- l, do: move_bliz(b, w, h))
+    {bliz, occupied(bliz)}
+  end
 
-  def can_move({r, c} = pos, bliz, w, h) do
+  def can_move({r, c} = pos, {_, busy}, w, h) do
     cond do
-      find_value(bliz, fn {p, _} -> p == pos end) != nil -> false
+      :sets.is_element(pos, busy) -> false
       pos == {0, 1} or pos == {h, w - 1} -> true
       r <= 0 or r >= h or c <= 0 or c >= w -> false
       true -> true
