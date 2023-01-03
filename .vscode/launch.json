@@ -14,7 +14,7 @@
             "type": "mix_task",
             "name": "mix AoC",
             "request": "launch",
-            "task": "d16.p1",
+            "task": "d24.p1",
             "projectDir": "${workspaceRoot}"
         },
         {
